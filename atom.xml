@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://robin-go.github.io</id>
+    <title>keep coding</title>
+    <updated>2023-06-08T10:00:35.061Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://robin-go.github.io"/>
+    <link rel="self" href="https://robin-go.github.io/atom.xml"/>
+    <subtitle>温故而知新</subtitle>
+    <logo>https://robin-go.github.io/images/avatar.png</logo>
+    <icon>https://robin-go.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, keep coding</rights>
+    <entry>
+        <title type="html"><![CDATA[docker 磁盘空间不足 修改Docker Root Dir]]></title>
+        <id>https://robin-go.github.io/post/docker-ci-pan-kong-jian-bu-zu/</id>
+        <link href="https://robin-go.github.io/post/docker-ci-pan-kong-jian-bu-zu/">
+        </link>
+        <updated>2021-08-25T04:02:23.000Z</updated>
+        <summary type="html"><![CDATA[<p>Linux 虚拟机服务器通常会挂载多个硬盘，如果我们在安装 Docker 时没有配置合适的存储路径，在 Docker 运行了一段时间后，有可能出现磁盘空间被 Docker 数据沾满的情况，这时我们就需要进行数据迁移工作</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Linux 虚拟机服务器通常会挂载多个硬盘，如果我们在安装 Docker 时没有配置合适的存储路径，在 Docker 运行了一段时间后，有可能出现磁盘空间被 Docker 数据沾满的情况，这时我们就需要进行数据迁移工作</p>
+<!-- more -->
+<h3 id="修改docker数据存储路径">修改docker数据存储路径</h3>
+<p><code>docker</code>的默认的数据存储路径为<code>/var/lib/docker/</code>，如果其所在磁盘空间较小，容易出现磁盘空间不足的问题，这是就需要修改<code>docker</code>的数据存储路径，并迁移数据</p>
+<p><code>docker</code>的数据存储路径可通过<code>docker info</code>命令查看</p>
+<pre><code>[root]# docker info
+ ...
+ Docker Root Dir: /var/lib/docker/
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ ...
+</code></pre>
+<p>1.执行命令<code>df -h</code>，找一个大的磁盘， 然后创建新的数据目录</p>
+<pre><code>df -h
+mkdir -p /data/docker/lib
+</code></pre>
+<p>2.停止<code>docker</code>服务</p>
+<pre><code>systemctl stop docker
+</code></pre>
+<p>3.迁移<code>/var/lib/docker</code>目录下的数据到新创建的目录<code>/data/docker/lib</code></p>
+<pre><code>rsync -avz /var/lib/docker /data/docker/lib/
+</code></pre>
+<p>4.修改<code>docker</code>配置文件<code>/etc/docker/daemon.json</code>，默认没有，需要自己创建</p>
+<pre><code class="language-json">{
+ 	&quot;data-root&quot;: &quot;/a8root/data/docker/lib/docker&quot;
+}
+</code></pre>
+<p>5.然后重启<code>docker</code>服务就ok了</p>
+<pre><code>systemctl restart docker
+</code></pre>
+<p>6.执行<code>docker info</code>确认一下<code>Docker Root Dir</code>修改是否已经生效</p>
+<pre><code>[root]# docker info
+ ...
+ Docker Root Dir: /a8root/data/docker/lib/docker
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ ...
+</code></pre>
+<p>7.执行<code>docker images</code> 和<code>docker ps -a</code> 确认一下之前的镜像和容器是否正常</p>
+<pre><code>[root@tx3-suggest-dev08 docker]# docker images
+REPOSITORY           TAG       IMAGE ID       CREATED         SIZE
+mysql                5.7       6c20ffa54f86   7 days ago      448MB
+redis                latest    fad0ee7e917a   2 months ago    105MB
+tensorflow/serving   2.3.0     e0fe79fbb64f   12 months ago   286MB
+elasticsearch        7.2.0     0efa6a3de177   2 years ago     861MB
+elasticsearch        5.6.3     7e555e9f4ab4   3 years ago     581MB
+[root@tx3-suggest-dev08 docker]# docker ps -a
+CONTAINER ID   IMAGE                 COMMAND                  CREATED        STATUS                         PORTS     NAMES
+a8ad4663a11b   mysql:5.7             &quot;docker-entrypoint.s…&quot;   5 days ago     Exited (0) About an hour ago             mysql
+2ca8588f37a5   elasticsearch:5.6.3   &quot;/docker-entrypoint.…&quot;   2 months ago   Exited (143) 2 hours ago                 es
+c9645fe96ce8   elasticsearch:7.2.0   &quot;/usr/local/bin/dock…&quot;   2 months ago   Exited (143) 2 months ago                elasticsearch
+9ddbadad9900   redis                 &quot;docker-entrypoint.s…&quot;   2 months ago   Exited (0) 2 hours ago                   redis-test
+</code></pre>
+<p>8.确定没问题后就可以删除<code>/var/lib/docker/</code>目录中的文件来释放磁盘空间了</p>
+<pre><code>rm -rf /var/lib/docker
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[go语言文件读取以及IO操作]]></title>
+        <id>https://robin-go.github.io/post/go-yu-yan-wen-jian-du-qu-yi-ji-io-cao-zuo/</id>
+        <link href="https://robin-go.github.io/post/go-yu-yan-wen-jian-du-qu-yi-ji-io-cao-zuo/">
+        </link>
+        <updated>2019-02-13T12:02:13.000Z</updated>
+        <content type="html"><![CDATA[<p><ul class="markdownIt-TOC">
+<li><a href="#%E4%B8%80-%E6%96%87%E4%BB%B6%E4%BF%A1%E6%81%AF">一、文件信息</a>
+<ul>
+<li><a href="#osfileinfo%E6%8E%A5%E5%8F%A3">os.FileInfo接口</a>
+<ul>
+<li><a href="#%E6%8E%A5%E5%8F%A3%E5%B1%9E%E6%80%A7">接口属性</a></li>
+<li><a href="#osfilestat%E7%BB%93%E6%9E%84%E4%BD%93%E5%AE%9E%E7%8E%B0%E4%BA%86fileinfo%E6%8E%A5%E5%8F%A3%E7%9A%84%E6%89%80%E6%9C%89%E6%96%B9%E6%B3%95">os.fileStat结构体实现了FileInfo接口的所有方法</a></li>
+<li><a href="#%E7%A4%BA%E4%BE%8B">示例</a></li>
+</ul>
+</li>
+<li><a href="#%E6%96%87%E4%BB%B6%E8%B7%AF%E5%BE%84%E7%9B%B8%E5%85%B3%E5%87%BD%E6%95%B0">文件路径相关函数</a></li>
+</ul>
+</li>
+<li><a href="#%E4%BA%8C-%E6%96%87%E4%BB%B6%E7%9A%84%E5%B8%B8%E8%A7%84%E6%93%8D%E4%BD%9C">二、文件的常规操作</a>
+<ul>
+<li><a href="#%E5%88%9B%E5%BB%BA%E7%9B%AE%E5%BD%95-%E5%A6%82%E6%9E%9C%E5%AD%98%E5%9C%A8%E5%88%99%E5%A4%B1%E8%B4%A5">创建目录 如果存在则失败</a></li>
+<li><a href="#%E5%88%9B%E5%BB%BA%E6%96%87%E4%BB%B6-%E5%A6%82%E6%9E%9C%E5%AD%98%E5%9C%A8%E4%BC%9A%E8%A6%86%E7%9B%96">创建文件 如果存在会覆盖</a></li>
+<li><a href="#%E6%89%93%E5%BC%80%E6%96%87%E4%BB%B6">打开文件</a></li>
+<li><a href="#%E5%85%B3%E9%97%AD%E6%96%87%E4%BB%B6">关闭文件</a></li>
+<li><a href="#%E5%88%A0%E9%99%A4%E6%96%87%E4%BB%B6%E6%88%96%E7%9B%AE%E5%BD%95">删除文件或目录</a></li>
+</ul>
+</li>
+<li><a href="#%E4%B8%89-%E6%96%87%E4%BB%B6%E7%9A%84%E8%AF%BB%E5%86%99%E6%93%8D%E4%BD%9C">三、文件的读写操作</a>
+<ul>
+<li><a href="#%E8%AF%BB%E5%8F%96%E6%96%87%E4%BB%B6">读取文件</a></li>
+<li><a href="#%E5%86%99%E5%85%A5%E6%96%87%E4%BB%B6">写入文件</a></li>
+<li><a href="#%E6%96%87%E4%BB%B6%E5%A4%8D%E5%88%B6">文件复制</a></li>
+</ul>
+</li>
+<li><a href="#%E5%9B%9B-ioutil%E5%8C%85">四、ioutil包</a></li>
+<li><a href="#%E4%BA%94-bufio%E5%8C%85">五、bufio包</a>
+<ul>
+<li><a href="#ioreader%E5%92%8Ciowriter">io.Reader和io.Writer</a></li>
+<li><a href="#bufioreader%E7%BB%93%E6%9E%84%E4%BD%93">bufio.Reader结构体</a></li>
+<li><a href="#bufiowriter%E7%BB%93%E6%9E%84%E4%BD%93">bufio.Writer结构体</a></li>
+<li><a href="#bufioscanner%E7%BB%93%E6%9E%84%E4%BD%93">bufio.Scanner结构体</a></li>
+</ul>
+</li>
+</ul>
+</p>
+<h1 id="一-文件信息">一、文件信息</h1>
+<h2 id="osfileinfo接口">os.FileInfo接口</h2>
+<h3 id="接口属性">接口属性</h3>
+<pre><code class="language-go">type FileInfo interface {
+    Name() string       // 文件的名字
+    Size() int64        // 普通文件返回值表示其大小；其他文件的返回值含义各系统不同
+    Mode() FileMode     // 文件的模式位 (例-rw-rw-r--)
+    ModTime() time.Time // 文件的修改时间
+    IsDir() bool        // 等价于Mode().IsDir()
+    Sys() interface{}   // 底层数据来源（可以返回nil）
+}
+</code></pre>
+<h3 id="osfilestat结构体实现了fileinfo接口的所有方法">os.fileStat结构体实现了FileInfo接口的所有方法</h3>
+<pre><code class="language-go">type fileStat struct {
+    name    string
+    size    int64
+    mode    FileMode
+    modTime time.Time
+    sys     syscall.Stat_t
+}
+</code></pre>
+<h3 id="示例">示例</h3>
+<pre><code class="language-go">fileInfo, err := os.Stat(&quot;./aa.txt&quot;)
+if err != nil{
+    fmt.Println(err)
+    return
+}
+fmt.Printf(&quot;%T: %v&quot;, fileInfo, fileInfo)  // *os.fileStat: &amp;{aa.txt 23 ...}
+fmt.Println(fileInfo.Name())              // aa.txt
+fmt.Println(fileInfo.IsDir())             // false
+fmt.Println(fileInfo.Size())              // 23
+fmt.Println(fileInfo.Mode())              // -rw-rw-r--
+fmt.Println(fileInfo.ModTime())           // 2019-02-15 14:44:39.745 +0800 CST
+</code></pre>
+<h2 id="文件路径相关函数">文件路径相关函数</h2>
+<p>路径相关的函数有两个包，<code>path</code> 和 <code>path/filepath</code>,<br>
+两个包内有一些相同的函数，如<code>IsAbs()</code>、<code>Join()</code>、<code>Dir()</code><br>
+<code>filepath</code>中的函数兼容各个操作系统，涉及到windows系统路径操作时，应该使用<code>filepath</code>包</p>
+<ul>
+<li><code>filepath.Rel(basepath, targpath string) (string, error)</code>获取相对路径</li>
+<li><code>filepath.Abs(path string) (string, error)</code>获取绝对路径，如果path不是绝对路径，会加入当前工作目录以使之成为绝对路径。</li>
+<li><code>path.Join(elem ...string) string</code>路径拼接</li>
+<li><code>path.IsAbs(path string) bool</code>判断文件是否是绝对路径</li>
+<li><code>path.Dir(path string) string</code>获取目录</li>
+</ul>
+<h1 id="二-文件的常规操作">二、文件的常规操作</h1>
+<h2 id="创建目录-如果存在则失败">创建目录 如果存在则失败</h2>
+<ul>
+<li><code>os.Mkdir(name string, perm FileMode) error</code>
+<ul>
+<li>仅创建一层</li>
+<li>相当于<code>linux</code>命令<code>mkdir</code></li>
+</ul>
+</li>
+<li><code>os.MkdirAll(path string, perm FileMode) error</code>
+<ul>
+<li>创建多层</li>
+<li>相当于<code>linux</code>命令<code>mkdir -p</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="创建文件-如果存在会覆盖">创建文件 如果存在会覆盖</h2>
+<ul>
+<li><code>os.Create(name string) (file *File, err error)</code>
+<ul>
+<li>底层调用 <code>os.OpenFile(name, O_RDWR|O_CREATE|O_TRUNC, 0666)</code></li>
+<li>采用模式<code>0666</code>（任何人都可读写，不可执行）</li>
+<li>如果文件存在会清空它</li>
+</ul>
+</li>
+</ul>
+<h2 id="打开文件">打开文件</h2>
+<ul>
+<li>
+<p><code>os.Open(name string) (file *File, err error)</code></p>
+<ul>
+<li>底层调用<code>OpenFile(name, O_RDONLY, 0)</code></li>
+<li>以只读的方式打开文件</li>
+</ul>
+</li>
+<li>
+<p><code>os.OpenFile(name string, flag int, perm FileMode) (file *File, err error)</code></p>
+<ul>
+<li><code>perm</code>可为<code>0666</code>、<code>0777</code>等</li>
+<li><code>flag</code>是<code>os</code>包中定义的常量:</li>
+</ul>
+</li>
+</ul>
+<pre><code class="language-go">const (
+    O_RDONLY int = syscall.O_RDONLY // 只读模式打开文件
+    O_WRONLY int = syscall.O_WRONLY // 只写模式打开文件
+    O_RDWR   int = syscall.O_RDWR   // 读写模式打开文件
+    O_APPEND int = syscall.O_APPEND // 写操作时将数据附加到文件尾部
+    O_CREATE int = syscall.O_CREAT  // 如果不存在将创建一个新文件
+    O_EXCL   int = syscall.O_EXCL   // 和O_CREATE配合使用，文件必须不存在
+    O_SYNC   int = syscall.O_SYNC   // 打开文件用于同步I/O
+    O_TRUNC  int = syscall.O_TRUNC  // 如果可能，打开时清空文件
+)
+</code></pre>
+<h2 id="关闭文件">关闭文件</h2>
+<ul>
+<li><code>file.Close() error</code>
+<ul>
+<li>*File指针的方法</li>
+<li>程序与文件之间的连接断开</li>
+</ul>
+</li>
+</ul>
+<h2 id="删除文件或目录">删除文件或目录</h2>
+<ul>
+<li><code>os.Remove(name string) error</code>
+<ul>
+<li>只删除一层</li>
+<li>相当于<code>linux</code>命令<code>rm</code></li>
+</ul>
+</li>
+<li><code>os.RemoveAll(path string) error</code>
+<ul>
+<li>删除path指定的文件，或目录及它包含的任何下级对象</li>
+<li>相当于<code>linux</code>命令<code>rm -r</code></li>
+</ul>
+</li>
+</ul>
+<h1 id="三-文件的读写操作">三、文件的读写操作</h1>
+<h2 id="读取文件">读取文件</h2>
+<ul>
+<li><code>os.Open(filename)</code> --&gt; <code>*File</code></li>
+<li><code>file.Read([]byte)</code> --&gt; <code>n, err</code>
+<ul>
+<li>单次读取的字节数最大为<code>[]byte</code>的长度</li>
+<li><code>n</code>为实际读取到的字节数</li>
+<li>读取到末尾时<code>err</code>为<code>EOF(end of file)</code></li>
+</ul>
+</li>
+<li><code>file.Close()</code>关闭文件</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">//step1：打开文件
+fileName := &quot;.text.txt&quot;
+file, err := os.Open(fileName)
+if err != nil {
+    fmt.Println(&quot;打开错误&quot;, err)
+    return
+}
+//step2：读/写
+//从file中读取最多len(bs)个字节，存入bs切边中，n是实际读取的数量
+bs := make([]byte, 1024, 1024)
+for {
+    n, err := file.Read(bs)
+    if n == 0 || err == io.EOF {
+        fmt.Println(&quot;读取结束&quot;)
+        break
+    }
+    fmt.Println(string(bs[:n]))
+}
+//step3：关闭文件
+file.Close()
+</code></pre>
+<h2 id="写入文件">写入文件</h2>
+<p>写入文件与读取类似</p>
+<ul>
+<li><code>os.Open(filename)</code> --&gt; <code>*File</code></li>
+<li><code>file.Write([]byte)</code> --&gt; <code>n, err</code>
+<ul>
+<li>将<code>[]byte</code>中的数据写入文件</li>
+</ul>
+</li>
+<li><code>file.WriteString(string)</code> --&gt; <code>n, err</code>
+<ul>
+<li>将<code>string</code>写入文件</li>
+</ul>
+</li>
+<li><code>file.Close()</code></li>
+</ul>
+<h2 id="文件复制">文件复制</h2>
+<ul>
+<li><code>io.Copy(dst Writer, src Reader) (written int64, err error)</code>
+<ul>
+<li>dst和src为实现了接口io.Writer和io.Reader的实例</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">func copyFile(srcFile, destFile string) (int64, error) {
+    file1, err := os.Open(srcFile)
+    if err != nil {
+        return 0, err
+    }
+    file2, err := os.OpenFile(destFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)
+    if err != nil {
+        return 0, err
+    }
+    defer file1.Close()
+    defer file2.Close()
+    return io.Copy(file2, file1)
+}
+</code></pre>
+<h1 id="四-ioutil包">四、ioutil包</h1>
+<ul>
+<li><code>ReadFile()</code> --&gt; <code>([]byte, error)</code>
+<ul>
+<li>读取所有数据，返回字节数组</li>
+</ul>
+</li>
+<li><code>WriteFile(filename string, data []byte, perm os.FileMode)</code> --&gt; <code>error</code>
+<ul>
+<li>文件不存在则创建文件，存在则清空文件</li>
+<li>os.FileMode可以直接用<code>0666</code>或者<code>0777</code></li>
+</ul>
+</li>
+<li><code>ReadDir()</code> --&gt; <code>([]os.FileInfo, error)</code>
+<ul>
+<li>读取一个目录下的字内容，目录或文件，但是只有一层</li>
+<li>返回一个<code>os.FileInfo</code>切片</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">data, err := ioutil.ReadFile(&quot;aa.txt&quot;)
+fmt.Println(string(data))
+if err != nil {
+    fmt.Println(err)
+    return
+}
+
+err = ioutil.WriteFile(&quot;bb.txt&quot;, data, 0666)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+
+fileInfos, err := ioutil.ReadDir(&quot;.&quot;)
+if err != nil {
+    fmt.Println(err)
+    return
+}
+for i := range fileInfos {
+    fmt.Println(i, fileInfos[i].IsDir(), fileInfos[i].Name())
+}
+</code></pre>
+<h1 id="五-bufio包">五、bufio包</h1>
+<ul>
+<li><code>bufio</code>包实现了有缓冲的<code>I/O</code></li>
+<li><code>bufio</code>封装了一个<code>Reader</code>݊及<code>Writer</code>结构体，分别实现了<code>io.Reader</code>和<code>io.Writer</code>接口</li>
+<li>通过对对<code>io</code>模块的封装，提供了带有缓冲的<code>io</code>操作，减小了大块数据读写的io开销</li>
+</ul>
+<h2 id="ioreader和iowriter">io.Reader和io.Writer</h2>
+<pre><code class="language-go">type Reader interface {
+    Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+    Write(p []byte) (n int, err error)
+}
+</code></pre>
+<p><code>os.Open(name string) (*File, error)</code>返回的文件指针就实现了<code>io.Reader</code></p>
+<h2 id="bufioreader结构体">bufio.Reader结构体</h2>
+<ul>
+<li><code>NewReader(rd io.Reader) *Reader</code>
+<ul>
+<li><code>NewReader</code>创建一个具有默认大小缓冲、从<code>r</code>读取的<code>*Reader</code></li>
+</ul>
+</li>
+<li><code>Reader.Read(p []byte) (n int, err error)</code>
+<ul>
+<li><code>Read</code>读取数据写入<code>p</code>。本方法返回写入<code>p</code>的字节数</li>
+<li>返回值n可能小于<code>len(p)</code>,读取到达结尾时，返回值<code>n</code>将为<code>0</code>而<code>err</code>将为<code>io.EOF</code></li>
+<li>类似<code>File.Read()</code>方法</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">s := strings.NewReader(&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890&quot;)
+br := bufio.NewReader(s)
+b := make([]byte, 20)
+
+n, err := br.Read(b)
+fmt.Printf(&quot;%-20s %-2v %v\n&quot;, b[:n], n, err)  // ABCDEFGHIJKLMNOPQRST 20 &lt;nil&gt;
+
+n, err = br.Read(b)
+fmt.Printf(&quot;%-20s %-2v %v\n&quot;, b[:n], n, err)  // UVWXYZ1234567890 16 &lt;nil&gt;
+
+n, err = br.Read(b)
+fmt.Printf(&quot;%-20s %-2v %v\n&quot;, b[:n], n, err)  // 0 EOF
+</code></pre>
+<ul>
+<li><code>Reader.ReadBytes(delim byte) (line []byte, err error)</code>
+<ul>
+<li><code>delim</code>是<code>delimiter</code>的缩写意为定位符</li>
+<li><code>ReadBytes</code>读取直到第一次遇到<code>delim</code>字节，返回一个包含已读取的数据和<code>delim</code>字节的切片</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">s := strings.NewReader(&quot;ABCDEFG\n123456\n&quot;)
+br := bufio.NewReader(s)
+
+for {
+    sli, err := br.ReadBytes('\n')
+    if err err == io.EOF {
+        break
+    }
+    fmt.Println(sli)
+}
+// [65 66 67 68 69 70 71 10]
+// [49 50 51 52 53 54 10]
+</code></pre>
+<ul>
+<li><code>Reader.ReadString(delim byte) (line string, err error)</code>
+<ul>
+<li>返回的是字符串类型</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">s := strings.NewReader(&quot;ABCDEFG\n123456\n&quot;)
+br := bufio.NewReader(s)
+for {
+    s, err := br.ReadString('\n')
+    if err err == io.EOF {
+        break
+    }
+    fmt.Print(s)
+}
+// ABCDEFG
+// 123456
+</code></pre>
+<h2 id="bufiowriter结构体">bufio.Writer结构体</h2>
+<ul>
+<li><code>NewWriter(w io.Writer) *Writer</code>
+<ul>
+<li><code>NewWriter</code>创建一个具有默认大小缓冲、写入<code>w</code>的<code>*Writer</code></li>
+</ul>
+</li>
+<li><code>Writer.Write(p []byte) (nn int, err error)</code>
+<ul>
+<li><code>Write</code>将<code>p</code>的内容写入缓冲。返回写入的字节数。如果返回值<code>nn &lt; len(p)</code>，还会返回一个错误说明原因</li>
+<li>类似<code>File.Write()</code>方法</li>
+</ul>
+</li>
+<li><code>Writer.WriteString(s string) (int, error)</code>
+<ul>
+<li>写入一个字符串，返回写入的字节数</li>
+</ul>
+</li>
+<li><code>Writer.Flush() error</code>
+<ul>
+<li>Flush方法将缓冲中的数据输出</li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">file1, _ := os.Open(&quot;aa.txt&quot;)
+defer file1.Close()
+reader := bufio.NewReader(file1)
+file2, _ := os.Create(&quot;cc.txt&quot;)
+defer file2.Close()
+writer := bufio.NewWriter(file2)
+
+for {
+    bs, err := reader.ReadBytes('\n')
+    if err == io.EOF {
+        fmt.Println(&quot;读取完毕&quot;)
+        break
+    }
+    writer.Write(bs)
+    writer.Flush()
+}
+</code></pre>
+<h2 id="bufioscanner结构体">bufio.Scanner结构体</h2>
+<ul>
+<li><code>NewScanner(r io.Reader) *Scanner</code>
+<ul>
+<li>创建并返回一个从<code>r</code>读取数据的<code>Scanner</code>，默认的分割函数是<code>ScanLines</code></li>
+<li>通过<code>Scanner.Split(split SplitFunc)</code>方法，可以为<code>Scanner</code>指定<code>splitFunc</code></li>
+<li>Scanner可以通过plitFunc将<code>r</code>中的数据拆分为多个token，然后通过<code>Scanner.Scan()</code>依次读取</li>
+</ul>
+</li>
+<li><code>bufio</code>中提供的默认<code>splitFunc</code>：
+<ul>
+<li><code>ScanBytes</code>，按照<code>byte</code>进程拆分</li>
+<li><code>ScanRunes</code>，按照行<code>(&quot;\n&quot;)</code>进程拆分</li>
+<li><code>ScanWords</code>，按照<code>utf-8</code>字符进行拆分</li>
+<li><code>ScanLines</code>，按照单词<code>(&quot; &quot;)</code>进程拆分</li>
+</ul>
+</li>
+<li>常用方法
+<ul>
+<li><code>Split(split SplitFunc)</code></li>
+<li><code>Scan() bool</code></li>
+<li><code>Text() string</code></li>
+<li><code>Bytes() []byte</code></li>
+</ul>
+</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-go">scanner := bufio.NewScanner(os.Stdin)
+scanner.Split(bufio.ScanLines)
+for scanner.Scan() {
+    if scanner.Text() == &quot;q&quot; {
+        break
+    }
+    fmt.Println(scanner.Text()) // Println will add back the final '\n'
+}
+if err := scanner.Err(); err != nil {
+    fmt.Fprintln(os.Stderr, &quot;reading standard input:&quot;, err)
+}
+</code></pre>
+]]></content>
+    </entry>
+</feed>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>docker 磁盘空间不足 修改Docker Root Dir | keep coding</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://robin-go.github.io/favicon.ico?v=1686216456795">
+<link rel="stylesheet" href="https://robin-go.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="Linux 虚拟机服务器通常会挂载多个硬盘，如果我们在安装 Docker 时没有配置合适的存储路径，在 Docker 运行了一段时间后，有可能出现磁盘空间被 Docker 数据沾满的情况，这时我们就需要进行数据迁移工作
+
+修改docker数..." />
+    <meta name="keywords" content="运维,Docker" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://robin-go.github.io">
+        <img src="https://robin-go.github.io/images/avatar.png?v=1686216456795" class="site-logo">
+        <h1 class="site-title">keep coding</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://robin-go.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">docker 磁盘空间不足 修改Docker Root Dir</h2>
+            <div class="post-date">2021-08-25</div>
+            
+              <div class="feature-container" style="background-image: url('https://robin-go.github.io/post-images/docker-ci-pan-kong-jian-bu-zu.png')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>Linux 虚拟机服务器通常会挂载多个硬盘，如果我们在安装 Docker 时没有配置合适的存储路径，在 Docker 运行了一段时间后，有可能出现磁盘空间被 Docker 数据沾满的情况，这时我们就需要进行数据迁移工作</p>
+<!-- more -->
+<h3 id="修改docker数据存储路径">修改docker数据存储路径</h3>
+<p><code>docker</code>的默认的数据存储路径为<code>/var/lib/docker/</code>，如果其所在磁盘空间较小，容易出现磁盘空间不足的问题，这是就需要修改<code>docker</code>的数据存储路径，并迁移数据</p>
+<p><code>docker</code>的数据存储路径可通过<code>docker info</code>命令查看</p>
+<pre><code>[root]# docker info
+ ...
+ Docker Root Dir: /var/lib/docker/
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ ...
+</code></pre>
+<p>1.执行命令<code>df -h</code>，找一个大的磁盘， 然后创建新的数据目录</p>
+<pre><code>df -h
+mkdir -p /data/docker/lib
+</code></pre>
+<p>2.停止<code>docker</code>服务</p>
+<pre><code>systemctl stop docker
+</code></pre>
+<p>3.迁移<code>/var/lib/docker</code>目录下的数据到新创建的目录<code>/data/docker/lib</code></p>
+<pre><code>rsync -avz /var/lib/docker /data/docker/lib/
+</code></pre>
+<p>4.修改<code>docker</code>配置文件<code>/etc/docker/daemon.json</code>，默认没有，需要自己创建</p>
+<pre><code class="language-json">{
+ 	&quot;data-root&quot;: &quot;/a8root/data/docker/lib/docker&quot;
+}
+</code></pre>
+<p>5.然后重启<code>docker</code>服务就ok了</p>
+<pre><code>systemctl restart docker
+</code></pre>
+<p>6.执行<code>docker info</code>确认一下<code>Docker Root Dir</code>修改是否已经生效</p>
+<pre><code>[root]# docker info
+ ...
+ Docker Root Dir: /a8root/data/docker/lib/docker
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ ...
+</code></pre>
+<p>7.执行<code>docker images</code> 和<code>docker ps -a</code> 确认一下之前的镜像和容器是否正常</p>
+<pre><code>[root@tx3-suggest-dev08 docker]# docker images
+REPOSITORY           TAG       IMAGE ID       CREATED         SIZE
+mysql                5.7       6c20ffa54f86   7 days ago      448MB
+redis                latest    fad0ee7e917a   2 months ago    105MB
+tensorflow/serving   2.3.0     e0fe79fbb64f   12 months ago   286MB
+elasticsearch        7.2.0     0efa6a3de177   2 years ago     861MB
+elasticsearch        5.6.3     7e555e9f4ab4   3 years ago     581MB
+[root@tx3-suggest-dev08 docker]# docker ps -a
+CONTAINER ID   IMAGE                 COMMAND                  CREATED        STATUS                         PORTS     NAMES
+a8ad4663a11b   mysql:5.7             &quot;docker-entrypoint.s…&quot;   5 days ago     Exited (0) About an hour ago             mysql
+2ca8588f37a5   elasticsearch:5.6.3   &quot;/docker-entrypoint.…&quot;   2 months ago   Exited (143) 2 hours ago                 es
+c9645fe96ce8   elasticsearch:7.2.0   &quot;/usr/local/bin/dock…&quot;   2 months ago   Exited (143) 2 months ago                elasticsearch
+9ddbadad9900   redis                 &quot;docker-entrypoint.s…&quot;   2 months ago   Exited (0) 2 hours ago                   redis-test
+</code></pre>
+<p>8.确定没问题后就可以删除<code>/var/lib/docker/</code>目录中的文件来释放磁盘空间了</p>
+<pre><code>rm -rf /var/lib/docker
+</code></pre>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://robin-go.github.io/tag/Qks7kGnnO/" class="tag">
+                    运维
+                  </a>
+                
+                  <a href="https://robin-go.github.io/tag/yAdjN0MoU/" class="tag">
+                    Docker
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://robin-go.github.io/post/go-yu-yan-wen-jian-du-qu-yi-ji-io-cao-zuo/">
+                  <h3 class="post-title">
+                    go语言文件读取以及IO操作
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>
